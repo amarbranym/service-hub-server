@@ -2,20 +2,29 @@ import mongoose from "mongoose";
 
 import { env } from "./env";
 
-let isConnected = false;
+let connectionPromise: Promise<typeof mongoose> | null = null;
 
 export async function connectDB(): Promise<void> {
-  if (isConnected || mongoose.connection.readyState === 1) {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+  if (connectionPromise) {
+    await connectionPromise;
     return;
   }
 
   mongoose.set("strictQuery", true);
-  await mongoose.connect(env.mongoUri, {
+  connectionPromise = mongoose.connect(env.mongoUri, {
     serverSelectionTimeoutMS: 15_000,
-    // Prefer IPv4; some Windows/Atlas setups fail SRV resolution over IPv6.
-    family: 4,
+    // Fail fast if DB is unreachable instead of buffering model operations.
+    bufferCommands: false,
   });
-  isConnected = true;
+
+  try {
+    await connectionPromise;
+  } finally {
+    connectionPromise = null;
+  }
   // eslint-disable-next-line no-console
   console.log("MongoDB connected");
 }
