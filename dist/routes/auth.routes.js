@@ -10,5 +10,7 @@ authRouter.post("/login", rate_limit_middleware_1.authRateLimiter, auth_controll
 authRouter.get("/me", auth_middleware_1.requireAuth, auth_controller_1.me);
 authRouter.post("/send-otp", rate_limit_middleware_1.authRateLimiter, auth_controller_1.sendOtp);
 authRouter.post("/signup", rate_limit_middleware_1.authRateLimiter, auth_controller_1.signup);
+authRouter.post("/login/send-otp", rate_limit_middleware_1.authRateLimiter, auth_controller_1.sendLoginOtpCode);
+authRouter.post("/login/verify-otp", rate_limit_middleware_1.authRateLimiter, auth_controller_1.verifyLoginOtp);
 authRouter.patch("/choose-role", auth_middleware_1.requireAuth, auth_controller_1.chooseRole);
 exports.default = authRouter;

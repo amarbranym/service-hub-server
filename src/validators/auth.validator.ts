@@ -19,6 +19,11 @@ type SendOtpInput = {
   email?: string;
 };
 
+type VerifyLoginOtpInput = {
+  email?: string;
+  otp?: string;
+};
+
 type SignupWithOtpInput = {
   firstName?: string;
   lastName?: string;
@@ -111,4 +116,18 @@ export function validateChooseRoleInput(input: ChooseRoleInput): { role: "custom
     throw new ApiError(StatusCodes.BAD_REQUEST, "Role must be customer or provider.");
   }
   return { role };
+}
+
+export function validateVerifyLoginOtpInput(input: VerifyLoginOtpInput): { email: string; otp: string } {
+  const email = input.email?.trim().toLowerCase();
+  const otp = input.otp?.trim();
+
+  if (!email || !validator.isEmail(email)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "A valid email is required.");
+  }
+  if (!otp || !/^\d{8}$/.test(otp)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "OTP must be exactly 8 digits.");
+  }
+
+  return { email, otp };
 }

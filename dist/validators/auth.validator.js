@@ -8,6 +8,7 @@ exports.validateLoginInput = validateLoginInput;
 exports.validateSendOtpInput = validateSendOtpInput;
 exports.validateSignupWithOtpInput = validateSignupWithOtpInput;
 exports.validateChooseRoleInput = validateChooseRoleInput;
+exports.validateVerifyLoginOtpInput = validateVerifyLoginOtpInput;
 const validator_1 = __importDefault(require("validator"));
 const api_error_1 = require("../utils/api-error");
 const http_1 = require("../constants/http");
@@ -78,4 +79,15 @@ function validateChooseRoleInput(input) {
         throw new api_error_1.ApiError(http_1.StatusCodes.BAD_REQUEST, "Role must be customer or provider.");
     }
     return { role };
+}
+function validateVerifyLoginOtpInput(input) {
+    const email = input.email?.trim().toLowerCase();
+    const otp = input.otp?.trim();
+    if (!email || !validator_1.default.isEmail(email)) {
+        throw new api_error_1.ApiError(http_1.StatusCodes.BAD_REQUEST, "A valid email is required.");
+    }
+    if (!otp || !/^\d{8}$/.test(otp)) {
+        throw new api_error_1.ApiError(http_1.StatusCodes.BAD_REQUEST, "OTP must be exactly 8 digits.");
+    }
+    return { email, otp };
 }

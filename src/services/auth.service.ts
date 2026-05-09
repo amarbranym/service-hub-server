@@ -127,6 +127,40 @@ export async function sendSignupOtp(email: string) {
   await sendSignupOtpEmail(email, otp);
 }
 
+export async function sendLoginOtp(email: string) {
+  const user = await UserModel.findOne({ email });
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "No account found for this email.");
+  }
+
+  const existingOtp = await OtpModel.findOne({ email, purpose: "login" });
+  if (existingOtp) {
+    const secondsSinceLastSent = Math.floor((Date.now() - existingOtp.lastSentAt.getTime()) / 1000);
+    if (secondsSinceLastSent < 30) {
+      throw new ApiError(StatusCodes.TOO_MANY_REQUESTS, `Please wait ${30 - secondsSinceLastSent}s before resending OTP.`);
+    }
+  }
+
+  const otp = generateEightDigitOtp();
+  const codeHash = await bcrypt.hash(otp, 10);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await OtpModel.findOneAndUpdate(
+    { email, purpose: "login" },
+    {
+      email,
+      purpose: "login",
+      codeHash,
+      expiresAt,
+      attempts: 0,
+      lastSentAt: new Date(),
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  await sendSignupOtpEmail(email, otp);
+}
+
 export async function signupWithOtp(payload: SignupWithOtpPayload) {
   const otpRecord = await OtpModel.findOne({ email: payload.email, purpose: "signup" });
   if (!otpRecord) {
@@ -183,6 +217,46 @@ export async function chooseUserRole(userId: string, role: "customer" | "provide
 
   user.role = role;
   await user.save();
+
+  const token = signAccessToken({ userId: user._id.toString(), role: user.role });
+  return {
+    token,
+    user: {
+      id: user._id.toString(),
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      avatar: user.avatar,
+    },
+  };
+}
+
+export async function loginWithOtp(payload: { email: string; otp: string }) {
+  const otpRecord = await OtpModel.findOne({ email: payload.email, purpose: "login" });
+  if (!otpRecord) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "OTP not found. Please request a new code.");
+  }
+  if (otpRecord.expiresAt.getTime() < Date.now()) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "OTP expired. Please request a new code.");
+  }
+  if (otpRecord.attempts >= 5) {
+    throw new ApiError(StatusCodes.TOO_MANY_REQUESTS, "Too many invalid OTP attempts. Request a new OTP.");
+  }
+
+  const isOtpValid = await bcrypt.compare(payload.otp, otpRecord.codeHash);
+  if (!isOtpValid) {
+    otpRecord.attempts += 1;
+    await otpRecord.save();
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid OTP code.");
+  }
+
+  const user = await UserModel.findOne({ email: payload.email });
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "No account found for this email.");
+  }
+
+  await OtpModel.deleteOne({ _id: otpRecord._id });
 
   const token = signAccessToken({ userId: user._id.toString(), role: user.role });
   return {

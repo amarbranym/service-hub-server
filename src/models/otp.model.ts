@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-type OtpPurpose = "signup";
+type OtpPurpose = "signup" | "login";
 
 type OtpCode = {
   email: string;
@@ -14,7 +14,7 @@ type OtpCode = {
 const otpSchema = new mongoose.Schema<OtpCode>(
   {
     email: { type: String, required: true, lowercase: true, trim: true, index: true },
-    purpose: { type: String, required: true, enum: ["signup"], index: true },
+    purpose: { type: String, required: true, enum: ["signup", "login"], index: true },
     codeHash: { type: String, required: true },
     expiresAt: { type: Date, required: true },
     attempts: { type: Number, default: 0 },

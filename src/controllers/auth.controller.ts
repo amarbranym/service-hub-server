@@ -6,7 +6,9 @@ import {
   chooseUserRole,
   getCurrentUser,
   loginUser,
+  loginWithOtp,
   registerUser,
+  sendLoginOtp,
   sendSignupOtp,
   signupWithOtp,
 } from "../services/auth.service";
@@ -16,6 +18,7 @@ import {
   validateRegisterInput,
   validateSendOtpInput,
   validateSignupWithOtpInput,
+  validateVerifyLoginOtpInput,
 } from "../validators/auth.validator";
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -55,6 +58,15 @@ export const sendOtp = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
+export const sendLoginOtpCode = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = validateSendOtpInput(req.body);
+  await sendLoginOtp(email);
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Login OTP sent successfully.",
+  });
+});
+
 export const signup = asyncHandler(async (req: Request, res: Response) => {
   const payload = validateSignupWithOtpInput(req.body);
   const data = await signupWithOtp(payload);
@@ -71,6 +83,16 @@ export const chooseRole = asyncHandler(async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).json({
     success: true,
     message: "Role updated successfully.",
+    data,
+  });
+});
+
+export const verifyLoginOtp = asyncHandler(async (req: Request, res: Response) => {
+  const payload = validateVerifyLoginOtpInput(req.body);
+  const data = await loginWithOtp(payload);
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Login successful.",
     data,
   });
 });

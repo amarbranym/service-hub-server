@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.chooseRole = exports.signup = exports.sendOtp = exports.me = exports.login = exports.register = void 0;
+exports.verifyLoginOtp = exports.chooseRole = exports.signup = exports.sendLoginOtpCode = exports.sendOtp = exports.me = exports.login = exports.register = void 0;
 const http_1 = require("../constants/http");
 const async_handler_1 = require("../utils/async-handler");
 const auth_service_1 = require("../services/auth.service");
@@ -38,6 +38,14 @@ exports.sendOtp = (0, async_handler_1.asyncHandler)(async (req, res) => {
         message: "OTP sent successfully.",
     });
 });
+exports.sendLoginOtpCode = (0, async_handler_1.asyncHandler)(async (req, res) => {
+    const { email } = (0, auth_validator_1.validateSendOtpInput)(req.body);
+    await (0, auth_service_1.sendLoginOtp)(email);
+    res.status(http_1.StatusCodes.OK).json({
+        success: true,
+        message: "Login OTP sent successfully.",
+    });
+});
 exports.signup = (0, async_handler_1.asyncHandler)(async (req, res) => {
     const payload = (0, auth_validator_1.validateSignupWithOtpInput)(req.body);
     const data = await (0, auth_service_1.signupWithOtp)(payload);
@@ -53,6 +61,15 @@ exports.chooseRole = (0, async_handler_1.asyncHandler)(async (req, res) => {
     res.status(http_1.StatusCodes.OK).json({
         success: true,
         message: "Role updated successfully.",
+        data,
+    });
+});
+exports.verifyLoginOtp = (0, async_handler_1.asyncHandler)(async (req, res) => {
+    const payload = (0, auth_validator_1.validateVerifyLoginOtpInput)(req.body);
+    const data = await (0, auth_service_1.loginWithOtp)(payload);
+    res.status(http_1.StatusCodes.OK).json({
+        success: true,
+        message: "Login successful.",
         data,
     });
 });

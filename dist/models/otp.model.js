@@ -7,7 +7,7 @@ exports.OtpModel = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const otpSchema = new mongoose_1.default.Schema({
     email: { type: String, required: true, lowercase: true, trim: true, index: true },
-    purpose: { type: String, required: true, enum: ["signup"], index: true },
+    purpose: { type: String, required: true, enum: ["signup", "login"], index: true },
     codeHash: { type: String, required: true },
     expiresAt: { type: Date, required: true },
     attempts: { type: Number, default: 0 },
