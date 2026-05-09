@@ -3,23 +3,18 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 
+import { applyCorsHeaders } from "./config/cors";
 import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware";
 import router from "./routes";
 
 const app = express();
 
-// Temporary: allow any origin / method / header (dev + cross-domain client until you lock this down).
+// CORS: allow production client + local dev (see src/config/cors.ts and CORS_ORIGINS env).
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "*");
-  res.setHeader("Access-Control-Allow-Headers", "*");
-  res.setHeader("Access-Control-Max-Age", "86400");
-
-  const requested = req.header("access-control-request-headers");
-  if (requested) {
-    res.setHeader("Access-Control-Allow-Headers", requested);
-  }
+  applyCorsHeaders(req.get("Origin"), req.headers as Record<string, string | string[] | undefined>, (name, value) => {
+    res.setHeader(name, value);
+  });
 
   if (req.method?.toUpperCase() === "OPTIONS") {
     res.status(204).end();

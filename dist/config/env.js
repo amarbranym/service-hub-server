@@ -14,6 +14,7 @@ function required(name, value) {
 exports.env = {
     nodeEnv: process.env.NODE_ENV ?? "development",
     port: Number(process.env.PORT ?? 5000),
+    /** Primary client URL (also merged into CORS allowlist in src/config/cors.ts). */
     clientUrl: process.env.CLIENT_URL ?? "http://localhost:3000",
     mongoUri: required("MONGO_URI", process.env.MONGO_URI),
     jwtSecret: required("JWT_SECRET", process.env.JWT_SECRET),

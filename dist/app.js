@@ -7,20 +7,16 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
+const cors_1 = require("./config/cors");
 const env_1 = require("./config/env");
 const error_middleware_1 = require("./middlewares/error.middleware");
 const routes_1 = __importDefault(require("./routes"));
 const app = (0, express_1.default)();
-// Temporary: allow any origin / method / header (dev + cross-domain client until you lock this down).
+// CORS: allow production client + local dev (see src/config/cors.ts and CORS_ORIGINS env).
 app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "*");
-    res.setHeader("Access-Control-Allow-Headers", "*");
-    res.setHeader("Access-Control-Max-Age", "86400");
-    const requested = req.header("access-control-request-headers");
-    if (requested) {
-        res.setHeader("Access-Control-Allow-Headers", requested);
-    }
+    (0, cors_1.applyCorsHeaders)(req.get("Origin"), req.headers, (name, value) => {
+        res.setHeader(name, value);
+    });
     if (req.method?.toUpperCase() === "OPTIONS") {
         res.status(204).end();
         return;
