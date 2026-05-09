@@ -13,9 +13,12 @@ const error_middleware_1 = require("./middlewares/error.middleware");
 const routes_1 = __importDefault(require("./routes"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({
-    origin: env_1.env.clientUrl,
-    credentials: true,
+    origin: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: false,
 }));
+app.options("*", (0, cors_1.default)());
 app.use((0, helmet_1.default)());
 app.use((0, morgan_1.default)(env_1.env.nodeEnv === "development" ? "dev" : "combined"));
 app.use(express_1.default.json({ limit: "1mb" }));

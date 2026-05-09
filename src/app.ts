@@ -12,10 +12,13 @@ const app = express();
 
 app.use(
   cors({
-    origin: env.clientUrl,
-    credentials: true,
+    origin: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: false,
   })
 );
+app.options("*", cors());
 app.use(helmet());
 app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
 app.use(express.json({ limit: "1mb" }));
