@@ -31,12 +31,19 @@ function setCorsHeaders(req: RequestLike, res: ResponseLike) {
   }
 }
 
+function getMethod(req: unknown): string {
+  const r = req as RequestLike & { method?: string };
+  return (r.method ?? "").toUpperCase();
+}
+
 export default async function handler(req: unknown, res: unknown) {
   const request = req as RequestLike;
   const response = res as ResponseLike;
 
   setCorsHeaders(request, response);
-  if (request.method === "OPTIONS") {
+
+  // Preflight must succeed without DB/auth. Normalize method (some runtimes vary casing).
+  if (getMethod(req) === "OPTIONS") {
     response.status(204).end();
     return;
   }

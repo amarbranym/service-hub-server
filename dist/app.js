@@ -21,7 +21,7 @@ app.use((req, res, next) => {
     if (requested) {
         res.setHeader("Access-Control-Allow-Headers", requested);
     }
-    if (req.method === "OPTIONS") {
+    if (req.method?.toUpperCase() === "OPTIONS") {
         res.status(204).end();
         return;
     }
