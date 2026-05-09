@@ -12,19 +12,23 @@ type ResponseLike = {
   end: () => void;
 };
 
-function getOrigin(req: RequestLike): string {
-  const origin = req.headers?.origin;
-  if (typeof origin === "string" && origin.length > 0) {
-    return origin;
-  }
-  return "*";
-}
-
 function setCorsHeaders(req: RequestLike, res: ResponseLike) {
-  res.setHeader("Access-Control-Allow-Origin", getOrigin(req));
-  res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  // Match app.ts: wide-open CORS for now (Vercel entry must set headers before Express runs).
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "*");
+  res.setHeader("Access-Control-Allow-Headers", "*");
+  res.setHeader("Access-Control-Max-Age", "86400");
+
+  const rawHeaders = req.headers as Record<string, string | string[] | undefined> | undefined;
+  const requested =
+    typeof rawHeaders?.["access-control-request-headers"] === "string"
+      ? rawHeaders["access-control-request-headers"]
+      : Array.isArray(rawHeaders?.["access-control-request-headers"])
+        ? rawHeaders["access-control-request-headers"].join(", ")
+        : undefined;
+  if (requested) {
+    res.setHeader("Access-Control-Allow-Headers", requested);
+  }
 }
 
 export default async function handler(req: unknown, res: unknown) {
