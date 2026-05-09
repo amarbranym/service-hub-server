@@ -25,7 +25,8 @@ exports.env = {
     smtpHost: process.env.SMTP_HOST ?? "",
     smtpPort: Number(process.env.SMTP_PORT ?? 587),
     smtpUser: process.env.SMTP_USER ?? "",
-    smtpPass: process.env.SMTP_PASS ?? "",
+    /** Gmail “app passwords” are often pasted with spaces; nodemailer expects 16 chars without spaces. */
+    smtpPass: (process.env.SMTP_PASS ?? "").replace(/\s+/g, ""),
     smtpFromEmail: process.env.SMTP_FROM_EMAIL ?? "",
     smtpFromName: process.env.SMTP_FROM_NAME ?? "ServiceHub",
 };

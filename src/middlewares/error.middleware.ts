@@ -103,6 +103,25 @@ function mapUnknownError(error: unknown): { statusCode: number; code: string; me
     };
   }
 
+  if (error instanceof Error) {
+    const name = error.name;
+    const msg = error.message ?? "";
+    if (
+      name === "MongooseServerSelectionError" ||
+      name === "MongoServerSelectionError" ||
+      name === "MongoNetworkError" ||
+      msg.includes("buffering timed out") ||
+      msg.includes("ECONNREFUSED")
+    ) {
+      return {
+        statusCode: StatusCodes.SERVICE_UNAVAILABLE,
+        code: "DATABASE_UNAVAILABLE",
+        message:
+          "Cannot reach the database. On MongoDB Atlas: allow IP 0.0.0.0/0 (or Vercel egress), confirm MONGO_URI in Vercel Environment Variables, and ensure the cluster is not paused.",
+      };
+    }
+  }
+
   return {
     statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     code: "INTERNAL_SERVER_ERROR",
