@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { ServerResponse } from "node:http";
 
 import app from "../src/app";
 import { applyCorsHeaders } from "../src/config/cors";
@@ -12,13 +13,6 @@ type RequestLike = {
   headers?: Record<string, string | string[] | undefined>;
 };
 
-type ResponseLike = {
-  setHeader: (name: string, value: string) => void;
-  status: (code: number) => ResponseLike & { json?: (body: unknown) => void };
-  end: (chunk?: string) => void;
-  json?: (body: unknown) => void;
-};
-
 function getHeader(headers: RequestLike["headers"], name: string): string | undefined {
   if (!headers) return undefined;
   const lower = name.toLowerCase();
@@ -28,7 +22,7 @@ function getHeader(headers: RequestLike["headers"], name: string): string | unde
   return undefined;
 }
 
-function setCorsHeaders(req: RequestLike, res: ResponseLike) {
+function setCorsHeaders(req: RequestLike, res: ServerResponse) {
   applyCorsHeaders(getHeader(req.headers, "origin"), req.headers, (name, value) => res.setHeader(name, value));
 }
 
@@ -46,13 +40,13 @@ function getUrlPath(req: RequestLike): string {
   }
 }
 
-function sendJsonError(
-  response: ResponseLike,
-  statusCode: number,
-  code: string,
-  message: string,
-  details?: unknown
-): void {
+function writeJson(res: ServerResponse, statusCode: number, body: Record<string, unknown>): void {
+  res.statusCode = statusCode;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(body));
+}
+
+function sendJsonError(res: ServerResponse, statusCode: number, code: string, message: string, details?: unknown): void {
   const body: Record<string, unknown> = {
     success: false,
     code,
@@ -62,13 +56,7 @@ function sendJsonError(
   if (details !== undefined) {
     body.details = details;
   }
-  const r = response as ResponseLike & { json: (b: unknown) => void };
-  if (typeof r.json === "function") {
-    r.status(statusCode).json(body);
-    return;
-  }
-  response.setHeader("Content-Type", "application/json; charset=utf-8");
-  response.status(statusCode).end(JSON.stringify(body));
+  writeJson(res, statusCode, body);
 }
 
 function mapConnectFailure(error: unknown): { statusCode: number; code: string; message: string; details?: unknown } {
@@ -104,25 +92,20 @@ function mapConnectFailure(error: unknown): { statusCode: number; code: string; 
 
 export default async function handler(req: unknown, res: unknown) {
   const request = req as RequestLike;
-  const response = res as ResponseLike;
+  const response = res as ServerResponse;
 
   setCorsHeaders(request, response);
 
   // Preflight must succeed without DB/auth. Normalize method (some runtimes vary casing).
   if (getMethod(req) === "OPTIONS") {
-    response.status(204).end();
+    response.statusCode = 204;
+    response.end();
     return;
   }
 
   // Liveness probe: do not require Mongo so deploys and monitors can distinguish "up" vs DB issues.
   if (getMethod(req) === "GET" && getUrlPath(request) === "/api/v1/health") {
-    const r = response as ResponseLike & { json: (b: unknown) => void };
-    if (typeof r.json === "function") {
-      r.status(200).json({ success: true, message: "ServiceHub API is healthy." });
-    } else {
-      response.setHeader("Content-Type", "application/json; charset=utf-8");
-      response.status(200).end(JSON.stringify({ success: true, message: "ServiceHub API is healthy." }));
-    }
+    writeJson(response, StatusCodes.OK, { success: true, message: "ServiceHub API is healthy." });
     return;
   }
 
